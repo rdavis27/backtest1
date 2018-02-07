@@ -74,7 +74,12 @@ shinyServer(function(input, output) {
     bt1data <- reactive({
         getData()
         strSpan <<- getSpan()
-        Close <- Cl(gdata)
+        if (input$adjusted){
+            Close <- Ad(gdata)
+        }
+        else{
+            Close <- Cl(gdata)
+        }
         if (input$ilab1 == "SMA"){
             longMA <- SMA(Close, n = input$ival1)
         }
@@ -115,8 +120,15 @@ shinyServer(function(input, output) {
             gain   <- Op(kdata) / lastp
         }
         else{
-            lastp <- lag(Cl(kdata), 1)
-            gain   <- Cl(kdata) / lastp
+            if (input$adjusted){
+                lastp <- lag(Ad(kdata), 1)
+                gain   <- Ad(kdata) / lastp
+                
+            }
+            else{
+                lastp <- lag(Cl(kdata), 1)
+                gain   <- Cl(kdata) / lastp
+            }
         }
         colnames(lastp) <- "lastp"
         colnames(gain)   <- "gain"
