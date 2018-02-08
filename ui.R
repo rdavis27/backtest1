@@ -24,7 +24,7 @@ shinyUI(fluidPage(
                 column(4, style='padding:1px', selectInput("icol2", "color", c("blue","red","green","purple","orange"), selected = "red", width = 80)),
                 column(4, style='padding:1px', numericInput("ival2", "value", 50, width = 80))
             ),
-            selectInput("calc", "Calculate", c("Use values","Vary high indicator","Vary low indicator","Vary both indicators"), selected = "Use values"),
+            #selectInput("calc", "Calculate", c("Use values","Vary high indicator","Vary low indicator","Vary both indicators"), selected = "Use values"),
             fluidRow(
                 column(4, style='padding:1px', checkboxInput("adjusted", "Adjusted", TRUE)),
                 column(4, style='padding:1px', checkboxInput("volume", "Volume", TRUE)),
@@ -42,7 +42,7 @@ shinyUI(fluidPage(
                                selected=c(2, 5)),
             fluidRow(
                 column(4, style='padding:1px', selectInput("trade", "Trade at", c("open","close"), selected = "close")),
-                column(4, style='padding:1px', numericInput("itrade", "First trade to plot", 1, min = 1)),
+                column(4, style='padding:1px', numericInput("itrade", "First trade to plot", -1)),
                 column(4, style='padding:1px', numericInput("ntrade", "# of trades to plot", 1, min = 1))
             )
         )),

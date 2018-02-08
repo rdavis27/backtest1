@@ -53,9 +53,11 @@ shinyServer(function(input, output) {
         strSpan
     })
     getSpan2 <- reactive({
+        input$symbol
         indx1 <- input$itrade
-        indx2 <- input$itrade+input$ntrade
-        if (indx1 > (NROW(kdata)-1)) indx1 <- (NROW(kdata)-1)
+        if (indx1 < 0) indx1 <- NROW(kdata) + indx1
+        else if (indx1 > (NROW(kdata)-1)) indx1 <- (NROW(kdata)-1)
+        indx2 <- indx1+input$ntrade
         if (indx2 > NROW(kdata)) indx2 <- NROW(kdata)
         date1 <- date(kdata[indx1])
         date2 <- date(kdata[indx2])
@@ -136,8 +138,9 @@ shinyServer(function(input, output) {
         kdata <<- merge.xts(N, kdata, lastp, gain)
         ldata <<- kdata[kdata$lag2 == 1,]
         indx1 <- input$itrade
-        indx2 <- input$itrade+input$ntrade
-        if (indx1 > (NROW(kdata)-1)) indx1 <- (NROW(kdata)-1)
+        if (indx1 < 0) indx1 <- NROW(kdata) + indx1
+        else if (indx1 > (NROW(kdata)-1)) indx1 <- (NROW(kdata)-1)
+        indx2 <- indx1+input$ntrade
         if (indx2 > NROW(kdata)) indx2 <- NROW(kdata)
         mdata <<- kdata[indx1:indx2]
         mdata$lastp[1] <<- NA
@@ -183,28 +186,48 @@ shinyServer(function(input, output) {
             if (input$ival1 > 0){
                 num1 <<- input$ival1
                 col1 <<- input$icol1
-                tas = c(tas, addSMA(n = num1, col = col1))
+                if (input$adjusted){
+                    tas = c(tas, addSMA(n = num1, col = col1, with.col = Ad))
+                }
+                else{
+                    tas = c(tas, addSMA(n = num1, col = col1))
+                }
             }
         }
         else{
             if (input$ival1 > 0){
                 num1 <<- input$ival1
                 col1 <<- input$icol1
-                tas = c(tas, addEMA(n = num1, col = col1))
+                if (input$adjusted){
+                    tas = c(tas, addEMA(n = num1, col = col1, with.col = Ad))
+                }
+                else{
+                    tas = c(tas, addEMA(n = num1, col = col1))
+                }
             }
         }
         if (input$ilab2 == "SMA"){
             if (input$ival2 > 0){
                 num2 <<- input$ival2
                 col2 <<- input$icol2
-                tas = c(tas, addSMA(n = num2, col = col2))
+                if (input$adjusted){
+                    tas = c(tas, addSMA(n = num2, col = col2, with.col = Ad))
+                }
+                else{
+                    tas = c(tas, addSMA(n = num2, col = col2))
+                }
             }
         }
         else{
             if (input$ival2 > 0){
                 num2 <<- input$ival2
                 col2 <<- input$icol2
-                tas = c(tas, addEMA(n = num2, col = col2))
+                if (input$adjusted){
+                    tas = c(tas, addEMA(n = num2, col = col2, with.col = Ad))
+                }
+                else{
+                    tas = c(tas, addEMA(n = num2, col = col2))
+                }
             }
         }
         #cat(file = stderr(), paste0("chartSeries(", symbol, ", ", strSpan, ")\n"))
@@ -217,7 +240,14 @@ shinyServer(function(input, output) {
         clrs <<- ifelse(as.numeric(idata$lag1[indx]) == 1, "blue", "red")
         #if (indx1 > 0) clrs[indx1] <- paste(clrs[indx1], " 4")
         #if (indx2 > 0) clrs[indx2] <- paste(clrs[indx2], " 4")
-        if (indx1 > (NROW(clrs)-1)) indx1 <- (NROW(clrs)-1)
+        if (indx1 < 0){
+            indx1 <- NROW(kdata) + indx1
+            indx2 <- indx1+input$ntrade
+        }
+        else if (indx1 > (NROW(clrs)-1)){
+            indx1 <- (NROW(clrs)-1)
+            indx2 <- indx1+input$ntrade
+        }
         if (indx1 > 0) clrs[indx1] <- "green"
         if (indx2 > NROW(clrs)) indx2 <- NROW(clrs)
         if (indx2 > 0) clrs[indx2] <- "green"
