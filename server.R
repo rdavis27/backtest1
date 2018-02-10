@@ -151,10 +151,11 @@ shinyServer(function(input, output) {
         bt1data()
         cat(file=stderr(), paste0(
             input$symbol,"|",input$type,"|",input$theme,"#",
-            input$ilab1,"|", input$ival1,"|",input$icol1,"#",
-            input$ilab2,"|", input$ival2,"|",input$icol2,"#",
-            input$volume,"|",input$bollinger,"|",input$multicol,"|",input$logscale,"#",
-            input$dateRange[1],"|",input$dateRange[2],"|",input$span,"#", #input$cols,"|",
+            input$ilab1,"|",input$icol1,"|", input$ival1,"|",input$imin1,"|",input$imax1,"|",input$istp1,"#",
+            input$ilab2,"|",input$icol2,"|", input$ival2,"|",input$imin2,"|",input$imax2,"|",input$istp2,"#",
+            input$calc,"#",
+            input$adjusted,"|",input$volume,"|",input$logscale,"|",input$bollinger,"|",input$multicol,"#",
+            input$dateRange[1],"|",input$dateRange[2],"|",input$span,"#", #input$cols,"#",
             input$trade, "|",input$itrade,"|",input$ntrade,"\n"))
         indx1 <- input$itrade
         indx2 <- input$itrade+input$ntrade
@@ -311,5 +312,132 @@ shinyServer(function(input, output) {
         print(tail(gdata))
         print(paste0("gstart0=",gstart0))
         print(paste0("gstart1=",gstart1))
+    })
+    output$bt1Scan <- renderPrint({
+        maxgain <- 0
+        maxii <- 0
+        maxjj <- 0
+        maxklen <- 0
+        maxllen <- 0
+        getData()
+        strSpan <<- getSpan()
+        if (input$adjusted){
+            Close <- Ad(gdata)
+        }
+        else{
+            Close <- Cl(gdata)
+        }
+        imin1 <- input$imin1
+        imax1 <- input$imax1
+        istp1 <- input$istp1
+        imin2 <- input$imin2
+        imax2 <- input$imax2
+        istp2 <- input$istp2
+        if (input$calc == "Use values" | input$calc == "Vary low indicator"){
+            imin1 <- input$ival1
+            imax1 <- input$ival1
+            istp1 <- 1
+        }
+        if (input$calc == "Use values" | input$calc == "Vary high indicator"){
+            imin2 <- input$ival2
+            imax2 <- input$ival2
+            istp2 <- 1
+        }
+        ind1  <- NULL
+        ind2  <- NULL
+        all   <- NULL
+        long  <- NULL
+        nall  <- NULL
+        nlong <- NULL
+        ilag1 <- NULL
+        for (ii in seq(imin1, imax1, istp1)){
+            #max2 <- min(imax2, ii)
+            for (jj in seq(imin2, imax2, istp2)){
+                if (jj >= ii) break
+                if (input$ilab1 == "SMA"){
+                    longMA <- SMA(Close, n = ii)
+                }
+                else{
+                    longMA <- EMA(Close, n = ii)
+                }
+                if (input$ilab2 == "SMA"){
+                    shrtMA <- SMA(Close, n = jj)
+                }
+                else{
+                    shrtMA <- EMA(Close, n = jj)
+                }
+                colnames(longMA) <- "longMA"
+                colnames(shrtMA) <- "shrtMA"
+                hdata <<- merge.xts(gdata, longMA, shrtMA)
+                flag <- ifelse(hdata$shrtMA > hdata$longMA, 1, 0)
+                flag[is.na(flag[,1]),] <- -1
+                lag1 <- lag(flag, 1)
+                lag2 <- lag(flag, 2)
+                lag1[1] <- -1
+                lag2[1:2] <- -1
+                colnames(flag)  <- "flag"
+                colnames(lag1) <- "lag1"
+                colnames(lag2) <- "lag2"
+                N <- 1:NROW(hdata)
+                hdata <<- merge.xts(N, hdata, flag, lag1, lag2)
+                #gdata <<- gdata[!is.na(gdata$flag)] # remove rows with no longMA
+                hdata$lag1[hdata$lag1 < 0] <<- hdata$flag[hdata$lag1 < 0]
+                hdata$lag2[hdata$lag2 < 0] <<- hdata$flag[hdata$lag2 < 0]
+                #hdata <<- hdata[,c(1,4,7:11)] # just keep Open and Close
+                idata <<- hdata[strSpan,]
+                indx <<- as.numeric(which(idata$lag1 != idata$lag2))
+                if (NROW(indx) == 0 | indx[1] != 1) indx <<- c(1, indx)
+                if (indx[NROW(indx)] != NROW(idata)) indx <<- c(indx, NROW(idata))
+                kdata <<- idata[indx,2:NCOL(idata)]
+                if (input$trade == "open"){
+                    lastp <- lag(Op(kdata), 1)
+                    gain   <- Op(kdata) / lastp
+                }
+                else{
+                    if (input$adjusted){
+                        lastp <- lag(Ad(kdata), 1)
+                        gain   <- Ad(kdata) / lastp
+                        
+                    }
+                    else{
+                        lastp <- lag(Cl(kdata), 1)
+                        gain   <- Cl(kdata) / lastp
+                    }
+                }
+                colnames(lastp) <- "lastp"
+                colnames(gain)   <- "gain"
+                N <- 1:NROW(kdata)
+                kdata <<- merge.xts(N, kdata, lastp, gain)
+                ldata <<- kdata[kdata$lag2 == 1,]
+                indx1 <- input$itrade
+                indx2 <- input$itrade+input$ntrade
+                if (indx1 > (NROW(kdata)-1)) indx1 <- (NROW(kdata)-1)
+                if (indx2 > NROW(kdata)) indx2 <- NROW(kdata)
+                mdata <<- kdata[indx1:indx2]
+                mdata$lastp[1] <<- NA
+                mdata$gain[1]  <<- NA
+                ndata <<- mdata[mdata$lag2 == 1,]
+                kprod <- prod(kdata$gain, na.rm = TRUE)
+                lprod <- prod(ldata$gain, na.rm = TRUE)
+                if (maxgain < lprod){
+                    maxgain <- lprod
+                    maxii <- ii
+                    maxjj <- jj
+                    maxklen <- NROW(kdata)
+                    maxllen <- NROW(ldata)
+                }
+                ind1  <- c(ind1, ii)
+                ind2  <- c(ind2, jj)
+                all   <- c(all,  kprod)
+                long  <- c(long, lprod)
+                nall  <- c(nall,  NROW(kdata))
+                nlong <- c(nlong, NROW(ldata))
+                ilag1  <- c(ilag1,  as.numeric(kdata[NROW(kdata),"lag1"]))
+            }
+        }
+        dscan <- data.frame(ind1, ind2, all, long, nall, nlong, ilag1)
+        dsort <- dscan[order(-long),]
+        #print(paste0("ii|jj|maxlong=",maxii,"|",maxjj,"|",maxgain,"|",maxklen,"|",maxllen))
+        print(dsort)
     })
 })

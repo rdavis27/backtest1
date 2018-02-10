@@ -15,16 +15,22 @@ shinyUI(fluidPage(
                 column(4, style='padding:1px', selectInput("theme", "Theme", c("white","black"), selected = "white"))
             ),
             fluidRow(
-                column(4, style='padding:1px', selectInput("ilab1", "High ind", c("none","EMA","SMA"), selected = "SMA", width = 80)),
-                column(4, style='padding:1px', selectInput("icol1", "color", c("blue","red","green","purple","orange"), selected = "blue", width = 80)),
-                column(4, style='padding:1px', numericInput("ival1", "value", 200, width = 80))
+                column(2, style='padding:1px', selectInput("ilab1", "High ind", c("none","EMA","SMA"), selected = "SMA", width = 80)),
+                column(2, style='padding:1px', selectInput("icol1", "color", c("blue","red","green","purple","orange"), selected = "blue", width = 80)),
+                column(2, style='padding:1px', numericInput("ival1", "value", 200, width = 80)),
+                column(2, style='padding:1px', numericInput("imin1", "min", 10, width = 80)),
+                column(2, style='padding:1px', numericInput("imax1", "max", 200, width = 80)),
+                column(2, style='padding:1px', numericInput("istp1", "step", 10, width = 80))
             ),
             fluidRow(
-                column(4, style='padding:1px', selectInput("ilab2", "Low ind", c("none","EMA","SMA"), selected = "SMA", width = 80)),
-                column(4, style='padding:1px', selectInput("icol2", "color", c("blue","red","green","purple","orange"), selected = "red", width = 80)),
-                column(4, style='padding:1px', numericInput("ival2", "value", 50, width = 80))
+                column(2, style='padding:1px', selectInput("ilab2", "Low ind", c("none","EMA","SMA"), selected = "SMA", width = 80)),
+                column(2, style='padding:1px', selectInput("icol2", "color", c("blue","red","green","purple","orange"), selected = "red", width = 80)),
+                column(2, style='padding:1px', numericInput("ival2", "value", 50, width = 80)),
+                column(2, style='padding:1px', numericInput("imin2", "min", 10, width = 80)),
+                column(2, style='padding:1px', numericInput("imax2", "max", 200, width = 80)),
+                column(2, style='padding:1px', numericInput("istp2", "step", 10, width = 80))
             ),
-            #selectInput("calc", "Calculate", c("Use values","Vary high indicator","Vary low indicator","Vary both indicators"), selected = "Use values"),
+            selectInput("calc", "Calculate", c("Use values","Vary high indicator","Vary low indicator","Vary both indicators"), selected = "Use values"),
             fluidRow(
                 column(4, style='padding:1px', checkboxInput("adjusted", "Adjusted", TRUE)),
                 column(4, style='padding:1px', checkboxInput("volume", "Volume", TRUE)),
@@ -62,6 +68,10 @@ shinyUI(fluidPage(
                tabPanel(
                    "Data",
                    verbatimTextOutput("bt1Data")
+               ),
+               tabPanel(
+                   "Scan",
+                   verbatimTextOutput("bt1Scan")
                )
             )
         )
